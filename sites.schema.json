@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Space Sites List",
+  "description": "Schema to validate a list of landing sites for lunar missions.",
+  "type": "object",
+  "properties": {
+    "sites": {
+      "type": "array",
+      "description": "List of sites.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "internal site id"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Name of the site."
+          },
+          "mission_id": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "internal mission id"
+          },
+          "cell_id": {
+            "type": "string",
+            "pattern": "^([0-9]{1,2}[C-X]|[ABYZ])\\s?[A-Z]{2}$",
+            "description": "25x25 km LGRS base grid cell identifier (e.g., 26NEF)."
+          },
+          "lat": {
+            "type": "number",
+            "minimum": -90,
+            "maximum": 90,
+            "description": "Selenographic latitude in decimal degrees."
+          },
+          "long": {
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180,
+            "description": "Selenographic longitude in decimal degrees."
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "mission_id",
+          "cell_id",
+          "lat",
+          "long"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "sites"
+  ],
+  "additionalProperties": false
+}
