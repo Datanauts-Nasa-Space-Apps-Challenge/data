@@ -20,10 +20,14 @@
             "minLength": 1,
             "description": "Name of the site."
           },
-          "mission_id": {
-              "type": "integer",
+          "mission_ids": {
+              "type": "array",
               "minimum": 1,
-              "description": "internal mission id"
+              "description": "List of mission ids targeting this site",
+              "items": {
+                  "type": "integer"
+              },
+              "uniqueItems": true
           },
           "cell_id": {
             "type": "string",
