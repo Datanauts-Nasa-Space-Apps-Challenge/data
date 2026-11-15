@@ -99,7 +99,7 @@ Example:
 {
   "id": 1,
   "name": "Luna 9",
-  "agency": "URSS",
+  "agency": "USSR",
   "status": "completed"
 }
 ```
@@ -124,7 +124,6 @@ The catalogue includes organizations such as:
 - ISRO (India).
 - JAXA (Japan).
 - ESA (Europe).
-- Commercial organizations and private space companies.
 
 Some records combine a national space agency with a commercial contractor or mission operator.
 
@@ -194,7 +193,7 @@ Example:
 }
 ```
 
-Some records additionally include a `horizon_profile` property containing an ordered sequence of numerical angular measurements.
+Some records include a `horizon_profile` property containing an ordered sequence of numerical angular measurements.
 
 ## 3.3. Geographic coordinates
 
@@ -672,6 +671,67 @@ The application should distinguish between:
 This is especially important when presenting comparative analyses.
 
 A missing horizon profile must not be interpreted as a completely unobstructed horizon.
+
+## 8.4. Schemas and validation
+
+Both catalogues ship with a JSON Schema (draft 2020-12). They can be validated with:
+
+```bash
+python -m pip install jsonschema
+
+python - <<'EOF'
+import json, jsonschema
+for data, schema in [("missions.json", "missions.schema.json"),
+                     ("sites.json", "sites.schema.json")]:
+    jsonschema.validate(json.load(open(data)), json.load(open(schema)))
+    print(f"{data}: valid")
+EOF
+``` 
+
+## 8.5. Horizon profile precomputation (`src/precompute.py`)
+
+For every site in `sites.json`, the script computes the maximum terrain
+elevation angle along 360 azimuth rays cast over the LRO-LOLA lunar digital
+elevation model `LDEM_80S_20MPP_ADJ.TIF` (80°S region, 20 m/pixel). The DEM is
+not part of this repository: download it from NASA and place it next to the
+script before running.
+
+### Method
+
+1. Convert each site's selenographic latitude/longitude to the DEM's projected
+   coordinates.
+2. Load the raster once into memory for fast vectorized slicing.
+3. For each azimuth 0°…359°, cast a ray from the site, sampling the terrain
+   every `STEP_M` meters out to `MAX_DIST_M`.
+4. For each sample, compute the apparent elevation angle, correcting for lunar
+   spherical curvature:
+
+   `θ = atan2(h_terrain − h_observer − d² / (2·R_Moon), d)`
+
+5. Keep the maximum angle per azimuth and round it to 3 decimals.
+
+### Configuration (top of `precompute.py`)
+
+| Parameter             | Value        | Meaning                                   |
+| --------------------- | ------------ | ----------------------------------------- |
+| `R_MOON`              | 1737400.0 m  | Official lunar mean radius                |
+| `MAX_DIST_M`          | 100000.0 m   | Maximum ray-casting search distance       |
+| `STEP_M`              | 20.0 m       | Sampling step along each ray (matches DEM resolution) |
+| `OBSERVER_HEIGHT_M`   | 2.0 m        | Antenna / sensor height above local ground |
+
+### Requirements and usage
+
+```bash
+python -m pip install numpy rasterio pyproj
+cd src
+python precompute.py
+```
+
+The script must be run from `src/`, because the input/output paths are relative
+(`../sites.json`, `../sites_with_horizon.json`). It prints one `[OK]` line per
+computed site (with the min/max profile angles) and an `[OUT OF BOUNDS]` line
+for sites outside the DEM, then writes `../sites_with_horizon.json`.
+
 
 ---
 
